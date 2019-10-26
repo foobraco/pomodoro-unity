@@ -1,0 +1,12 @@
+Label {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(68, 138, 55);
+}
+
+Timer {
+    font-size: 20px;
+    align: center;
+    -unity-font-style: bold;
+    color: rgb(68, 55, 138);
+}

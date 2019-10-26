@@ -5,7 +5,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using PopupWindow = UnityEngine.UIElements.PopupWindow;
 
-
+namespace xyz.bryanalvarado.unityPomodoro
+{
 public class UnityPomodoro : EditorWindow
 {
     private enum TimerState
@@ -27,53 +28,44 @@ public class UnityPomodoro : EditorWindow
     private FloatField breakTime;
     private Button toggleStateButton;
     private TimerState timerState;
-    private PopupWindow popupWindow;
     private Label currentTime;
 
     public void OnEnable()
     {
-        // Each editor window contains a root VisualElement object
         VisualElement root = rootVisualElement;
-
-        // VisualElements objects can contain other VisualElement following a tree hierarchy.
-        VisualElement label = new Label("Hello World! From C#");
-        root.Add(label);
-
-        // Import UXML
-        var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Editor/UnityPomodoro.uxml");
-        VisualElement labelFromUXML = visualTree.CloneTree();
-        root.Add(labelFromUXML);
-
-        // A stylesheet can be added to a VisualElement.
-        // The style will be applied to the VisualElement and all of its children.
-        var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/UnityPomodoro.uss");
+        
+        var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Editor/Unity-Pomodoro/UnityPomodoro.uss");
         VisualElement labelWithStyle = new Label("Unity Timer");
         labelWithStyle.styleSheets.Add(styleSheet);
         root.Add(labelWithStyle);
 
         workTime = new FloatField("Work Interval (in minutes):");
+        workTime.value = 1f;
         root.Add(workTime);
         
         breakTime = new FloatField("Break Interval (in minutes):");
+        breakTime.value = 1f;
         root.Add(breakTime);
 
         toggleStateButton = new Button(ToggleTimerState) {text = "Start"};
         root.Add(toggleStateButton);
         
         currentTime = new Label();
+        currentTime.styleSheets.Add(styleSheet);
         root.Add(currentTime);
-        
-        popupWindow = new PopupWindow();
-        popupWindow.SetEnabled(false);
-        
-        root.Add(popupWindow);
 
         isOn = false;
     }
 
+    protected void Reset()
+    {
+        isOn = false;
+        startTime = DateTime.Now;
+    }
+
     private void ToggleTimerState()
     {
-        if (!isOn)
+        if (!isOn && workTime.value >= 1f && breakTime.value >= 1f)
         {
             isOn = true;
             startTime = DateTime.Now;
@@ -84,13 +76,14 @@ public class UnityPomodoro : EditorWindow
         else
         {
             isOn = false;
+            currentTime.text = string.Empty;
             toggleStateButton.text = "Start";
         }
     }
 
     protected void Update()
     {
-        if (isOn)
+        if (isOn && workTime.value >= 1f && breakTime.value >= 1f)
         {
             var timePassed = DateTime.Now - startTime;
             switch (timerState)
@@ -99,9 +92,10 @@ public class UnityPomodoro : EditorWindow
                     currentTime.text = $"{timePassed.Minutes}:{timePassed.Seconds}:{timePassed.Milliseconds}";
                     if (timePassed.Minutes >= workTime.value)
                     {
-                        popupWindow.text = "Time to take a break!";
                         timerState = TimerState.BREAK;
-                        popupWindow.SetEnabled(true);
+                        startTime = DateTime.Now;
+                        EditorUtility.DisplayDialog("Time to take a break!",
+                            "Go and stretch your legs, have a glass or water, relax!", "OK");
                     }
                     break;
                 
@@ -109,12 +103,16 @@ public class UnityPomodoro : EditorWindow
                     currentTime.text = $"{timePassed.Minutes}:{timePassed.Seconds}:{timePassed.Milliseconds}";                    
                     if (timePassed.Minutes >= breakTime.value)
                     {
-                        popupWindow.text = "Time to get back to work!";
                         timerState = TimerState.WORK;
-                        popupWindow.SetEnabled(true);
+                        startTime = DateTime.Now;
+                        EditorUtility.DisplayDialog("Time to get back to work!",
+                            "Remember to stay focus! You'll do a great work!", "OK");
                     }
                     break;
             }
         }
     }
+}    
+
 }
+
